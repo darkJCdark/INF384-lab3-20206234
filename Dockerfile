@@ -3,18 +3,27 @@
 # linea anterior. Corregirlas es el bloque A1 de la guia del laboratorio.
 
 # defecto 1
-FROM public.ecr.aws/lambda/nodejs:latest
+FROM public.ecr.aws/lambda/nodejs:20 AS build
+
+WORKDIR ${LAMBDA_TASK_ROOT}
 
 # defecto 2
-COPY . .
+COPY package.json package-lock.json ./
 
 # defecto 3
-RUN npm install
+RUN npm ci
 
-# defecto 4
-ENV DB_PASSWORD="inf384-clave-en-texto-plano"
+COPY src ./src
+
+RUN npm run build
+
+FROM public.ecr.aws/lambda/nodejs:20
+
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+# defecto 4: eliminada la credencial en texto plano
 
 # defecto 5
-RUN dnf install -y procps-ng vim && dnf clean all
+COPY --from=build dist/handler.js ./dist/handler.js
 
 CMD ["src/handler.handler"]
