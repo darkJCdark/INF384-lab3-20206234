@@ -24,6 +24,6 @@ WORKDIR ${LAMBDA_TASK_ROOT}
 # defecto 4: eliminada la credencial en texto plano
 
 # defecto 5
-COPY --from=build dist/handler.js ./dist/handler.js
+COPY --from=build ${LAMBDA_TASK_ROOT}/dist/handler.js ./dist/handler.js
 
 CMD ["src/handler.handler"]
