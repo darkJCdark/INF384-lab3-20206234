@@ -242,12 +242,47 @@ jobs:
   #
   # Sustituir el paso centinela por la implementacion.
   publicar:
+    needs: [calidad, secretos, dependencias, estatico]
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.publicar_imagen.outputs.digest }}
     steps:
-      - name: Sin implementar
+      - uses: actions/checkout@v4
+
+      - name: Credenciales temporales
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Iniciar sesion en el registro (ECR)
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build y publicar la imagen
+        id: publicar_imagen
         run: |
-          echo "::error::El job 'publicar' no esta implementado."
-          exit 1
+          set -euo pipefail
+          REGISTRO="${{ steps.ecr.outputs.registry }}/inf384-lab3"
+          SHA="${GITHUB_SHA:0:7}"
+
+          docker buildx build \
+            --platform linux/amd64 \
+            --label "org.opencontainers.image.title=inf384-lab3" \
+            --tag "${REGISTRO}:${SHA}" \
+            --push \
+            --metadata-file metadata.json \
+            .
+
+          DIGEST="${REGISTRO}@$(jq -r '."containerimage.digest"' metadata.json)"
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+
+          # Segundo tag (prd) sobre el mismo manifiesto ya publicado,
+          # sin reenviar capas
+          docker buildx imagetools create --tag "${REGISTRO}:prd" "${DIGEST}"
 
   # Este job viene completo y no se modifica.
   # Las estrategias de despliegue y la verificacion posterior son contenido
