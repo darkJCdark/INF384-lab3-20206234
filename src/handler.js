@@ -1,3 +1,7 @@
+// NOTA: prueba de inyeccion de falla — credencial escrita a proposito
+const AWS_BACKUP_ACCESS_KEY_ID = "AKIAZQ3XJ8KLMN2P5RTQ";
+const AWS_BACKUP_SECRET_ACCESS_KEY = "k9Lm3XyBpQvT7uWnR2FhJcE8dZaGsY1oI4NxMlwK";
+
 const { randomUUID } = require('node:crypto');
 const { Cookie } = require('tough-cookie');
 const { obtenerVersion } = require('./version');
